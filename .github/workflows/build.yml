@@ -1,0 +1,32 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo build --release --target wasm32-unknown-unknown
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supermosh_glide.wasm
+          path: target/wasm32-unknown-unknown/release/supermosh_glide.wasm
+      - if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" target/wasm32-unknown-unknown/release/supermosh_glide.wasm --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

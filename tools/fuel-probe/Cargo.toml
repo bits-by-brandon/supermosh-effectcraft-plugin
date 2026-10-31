@@ -1,0 +1,14 @@
+[package]
+name = "fuel-probe"
+description = "Runs the plug-in in wasmi as EffectCraft does and reports the fuel a frame uses"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+[workspace]
+
+[dependencies]
+# The interpreter and features EffectCraft's plug-in host uses.
+wasmi = { version = "2", default-features = false, features = ["std", "validate", "wat", "deterministic", "portable-dispatch"] }
+supermosh-glide = { path = "../.." }
