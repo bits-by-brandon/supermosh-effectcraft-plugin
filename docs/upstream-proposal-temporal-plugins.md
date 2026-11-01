@@ -1,8 +1,15 @@
 # Draft: temporal input for WebAssembly plug-ins (for storytold/effectcraft)
 
-Status: draft, not filed yet. Target: an issue on
-[storytold/effectcraft](https://github.com/storytold/effectcraft), complementing #1977 (plug-ins
-can't be time dependent) and #2572 (plug-in API v2: padding and GPU kernels).
+Status: filed as two issues, since the maintainers ask for one problem per ticket:
+
+* [storytold/effectcraft#2773](https://github.com/storytold/effectcraft/issues/2773): read the
+  effect's own layer at other times (`source_at`, part 2 below)
+* [storytold/effectcraft#2774](https://github.com/storytold/effectcraft/issues/2774): carry
+  state from frame to frame (part 3 below)
+
+Part 1 is [storytold/effectcraft#1977](https://github.com/storytold/effectcraft/issues/1977).
+Related: [storytold/effectcraft#2572](https://github.com/storytold/effectcraft/issues/2572)
+(plug-in API v2: padding and GPU kernels). The text below is the original combined draft.
 
 ---
 
