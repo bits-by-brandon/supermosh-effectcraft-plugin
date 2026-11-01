@@ -42,7 +42,10 @@ stay fast and scrubbing gives the same result as playing.
 > Video layers, including freeze-framed ones, work in Time mode as described.
 
 Supermosh's current version datamoshes the compressed video (it drops keyframes and splices
-P-frames). A plug-in only receives decoded pixels, so that technique is out of scope here.
+P-frames). A plug-in only receives decoded pixels and can't carry a picture from one frame to the
+next, so that technique can't run as a plug-in. For the classic look (a frozen frame moved by the
+footage's real motion), use the [`mvmosh` prepass](#classic-motion-vector-datamosh-toolsmvmosh)
+and import its output.
 
 ## Install
 
@@ -151,6 +154,47 @@ cargo build --release --target wasm32-unknown-unknown
 cd tools/fuel-probe
 cargo run --release -- ../../target/wasm32-unknown-unknown/release/supermosh_glide.wasm 1920 1080 step_source=1 steps=300 reseed=1
 ```
+
+## Classic motion-vector datamosh (`tools/mvmosh`)
+
+![Before the mosh point, then 1.6 s and 3.6 s into an mvmosh datamosh](docs/mvmosh-preview.jpg)
+
+The classic datamosh drops a keyframe, so the decoder keeps predicting from a stale picture:
+each P-frame's block motion vectors move the old pixels and nothing new arrives. The glide above
+can't do this, because its motion is synthetic. A real mosh needs the footage's motion from frame
+to frame, and EffectCraft's plug-in API v1 gives a plug-in one frame at a time with no memory. So
+`mvmosh` runs before EffectCraft, as a prepass:
+
+1. Up to `--start`, the output is the input.
+2. At `--start` the picture freezes.
+3. From then on, every frame finds a motion vector for each block (an encoder-style motion search
+   down to quarter pixels) and moves the frozen picture with those vectors only, with no residual.
+4. After `--end`, if given, the input shows again, as when the next keyframe arrives.
+
+It needs `ffmpeg` and `ffprobe` on `PATH` (to decode and encode) and copies the input's audio.
+
+```sh
+cd tools/mvmosh
+cargo build --release
+./target/release/mvmosh clip.mp4 clip_moshed.mp4 --start 13.36
+```
+
+Then import `clip_moshed.mp4` into EffectCraft (File ▸ Import ▸ File…) and use it as any footage;
+you can still apply Supermosh Glide or other effects on top.
+
+| Option | Default | |
+|---|---|---|
+| `--start S` | (required) | Time the picture freezes and the mosh begins. |
+| `--end S` | none | Time the input shows again. Without it the mosh runs to the end. |
+| `--motion FILE` | none | Take the motion from another clip (from its first frame, scaled to the input's size): the classic transition of one shot's picture moved by another shot's motion. |
+| `--block N` | 16 | Block size in pixels (16 = H.264 macroblocks). Larger blocks drag in bigger, chunkier pieces. |
+| `--search N` | 32 | Largest motion searched, in pixels. |
+| `--subpel N` | 4 | 1, 2 or 4: whole, half or quarter pixel motion. Quarter pixels follow slow motion but soften the picture over long moshes, as a decoder's interpolation does; 1 stays crisp and blocky. |
+| `--lambda X` | 0.0015 | Cost of motion. Raise it to keep flat areas (sky, water) still instead of letting noise pick a vector. |
+| `--gain X` | 1 | Scales every vector; above 1 exaggerates the drag. |
+| `--crf N` | 16 | x264 quality of the output, lower is better. |
+
+A 26.7 s 1080p clip moshed from its midpoint takes about 40 s on an Apple M3 Pro.
 
 ## Build
 
