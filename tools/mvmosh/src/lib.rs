@@ -20,7 +20,7 @@ pub struct Plane {
 impl Plane {
     /// Rec. 709 luma of packed RGB8.
     pub fn luma(rgb: &[u8], w: usize, h: usize) -> Plane {
-        let px = rgb.chunks_exact(3).take(w * h).map(|c| (0.2126 * c[0] as f32 + 0.7152 * c[1] as f32 + 0.0722 * c[2] as f32) / 255.0).collect();
+        let px = rgb.as_chunks::<3>().0.iter().take(w * h).map(|c| (0.2126 * c[0] as f32 + 0.7152 * c[1] as f32 + 0.0722 * c[2] as f32) / 255.0).collect();
         Plane { w, h, px }
     }
 
